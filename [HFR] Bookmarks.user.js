@@ -143,7 +143,7 @@ var LocalMPStorage = {
             return null;
         }
         // récupération de la cat et du topic dans l'url de la page
-        var resultp = /^.*&cat=([0-9]+).*&post=([0-9]+)&.*$/.exec(window.location.href);
+        var resultp = /^.*&cat=([0-9a-z]+).*&post=([0-9]+)&.*$/.exec(window.location.href);
         if(resultp !== null) { // url à paramètres
             return cat ? resultp[1] : resultp[2];
         } else {
@@ -236,7 +236,7 @@ LocalMPStorage.initBLMPStorage().then(function() {
             onglets.appendChild(div_apres);
         }
 
-       if(postId > 0 && catId > 0){
+       if(postId > 0 && (catId > 0 || catId == "prive")){
            let pseudos = root.querySelectorAll("table.messagetable > tbody > tr > td.messCase2 > div.toolbar > div.left");
            for(let pseudo of pseudos) {
                let imgBK = document.createElement("img");
