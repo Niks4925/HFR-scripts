@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          [HFR] Bookmarks
-// @version       0.4
+// @version       0.5
 // @namespace     forum.hardware.fr
 // @description   Gestion de posts favoris avec stockage en MPStorage
 // @icon          data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAilBMVEX%2F%2F%2F8AAADxjxvylSrzmzf5wYLzmjb%2F9er%2F%2Fv70nj32q1b5woT70qT82rT827b%2F%2B%2FjxkSHykybykyfylCjylCnzmDDzmjX0nTv1o0b1qFH2qVL2qlT3tGn4tmz4uHD4uXL5vHf83Lf83Lj937394MH%2B587%2B69f%2F8%2BX%2F8%2Bf%2F9On%2F9uz%2F%2BPH%2F%2BvT%2F%2FPmRE1AgAAAAwElEQVR42s1SyRbCIAysA7W2tdZ93%2Ff1%2F39PEtqDEt6rXnQOEMhAMkmC4E9QY9j9da1OkP%2BtTiBo1caOjGisDLRDANCk%2FVIHwwkBZGReh9avnGj2%2FWFg%2Feg5hD1bLZTwqdgU%2FlTSdrqZJWN%2FKImPOnGjiBJKhYqMvikxtlhLNTuz%2FgkxjmJRRza5mbcXpbz4zldLJ0lVEBY5nRL4CJx%2FMEfXE4L9j4Qr%2BZakpiandMpX6FO7%2FaPxxUTJI%2FsJ4cd4AoSOBgZnPvgtAAAAAElFTkSuQmCC
@@ -211,7 +211,8 @@ LocalMPStorage.initBLMPStorage().then(function() {
     function addButtons()
     {
         // Pas dans un topic
-        if (window.location.href.indexOf("https://forum.hardware.fr/forum2.php") == -1) {
+        if (window.location.href.indexOf("https://forum.hardware.fr/forum2.php") == -1
+           && window.location.href.indexOf("https://forum.hardware.fr/hfr/") == -1) {
             let onglets = root.querySelector("table.none > tbody > tr > td > div.cadreonglet");
 
             let div_avant = document.createElement("div");
@@ -296,7 +297,7 @@ LocalMPStorage.initBLMPStorage().then(function() {
               let trBookmark = document.createElement("tr");
               trBookmark.setAttribute("class", "sujet ligne_booleen cBackCouleurTab1")
               trBookmark.style.fontSize = "small";
-              trBookmark.style.height = "34px";
+              trBookmark.style.height = "28px";
 
 
               let tdIcon = document.createElement("td");
@@ -320,6 +321,8 @@ LocalMPStorage.initBLMPStorage().then(function() {
 
               let tdAuteur = document.createElement("td");
               tdAuteur.appendChild(document.createTextNode(item.author));
+              tdAuteur.style.fontWeight = "bold";
+              tdAuteur.style.fontSize = "10px";
               trBookmark.appendChild(tdAuteur);
 
               let tdDate = document.createElement("td");
