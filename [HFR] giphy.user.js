@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         [HFR] Giphy
-// @version      0.2
+// @version      0.3
 // @namespace    http://tampermonkey.net/
 // @description  Ajoute la recherche et l'insertion de gifs via Giphy
 // @author       Garath_
-// @match        https://forum.hardware.fr/message.php*
+// @match        https://forum.hardware.fr/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=hardware.fr
 // @grant        none
 // ==/UserScript==
@@ -12,8 +12,17 @@
 (function() {
     'use strict';
 
+    var placeholder = null;
     let content_form = document.querySelector("#content_form");
-    let placeholder = document.querySelector("#hop > table > tbody > tr:nth-child(5) > td");
+    if (window.location.href.startsWith("https://forum.hardware.fr/message.php")) {
+        placeholder = document.querySelector("#hop > table > tbody > tr:nth-child(5) > td");
+    }
+    else if (window.location.href.startsWith("https://forum.hardware.fr/forum2.php")) {
+        placeholder = document.querySelector("#md_fast_search");
+    }
+    else {
+        return
+    }
     placeholder.appendChild(document.createElement("br"));
 
     let giphy = document.createElement("div");
@@ -60,6 +69,7 @@
         fetch(api_url + new URLSearchParams({
             api_key: api_key,
             q: query,
+            limit: 50,
             offset: offset
         }))
             .then((response) => response.json())
