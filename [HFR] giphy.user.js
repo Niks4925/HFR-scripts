@@ -162,7 +162,7 @@ class GifService {
     }, 500));
 
     results.addEventListener("scroll", () => {
-        const isBottom = results.scrollTop + results.clientHeight >= results.scrollHeight;
+        const isBottom = results.scrollTop + results.clientHeight >= results.scrollHeight - 5;
         if (isBottom) {
             const offset = results.children.length;
             getService().search(input_text.value, offset, results);
