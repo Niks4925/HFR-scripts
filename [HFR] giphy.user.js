@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         [HFR] Giphy
-// @version      0.4
+// @version      0.4.1
 // @namespace    http://tampermonkey.net/
 // @description  Ajoute la recherche et l'insertion de gifs via Giphy et Tenor
 // @author       Garath_
@@ -56,7 +56,7 @@ class GifService {
             gifData.forEach(gif => {
                 const image = document.createElement('img');
                 image.src = gif.images.fixed_width_small.url;
-                image.style.margin = "5px"; // Ajout d'un petit espacement entre les images
+                image.style.margin = "5px";
 
                 image.addEventListener('click', () => {
                     this.addGifToForm(gif.images.downsized.url);
@@ -69,16 +69,22 @@ class GifService {
 
     class Tenor extends GifService {
         #apiKey = "AIzaSyBfOwbqJ2jquGzlFS16_My8JO-ndCditCk";
+        #next = null;
 
         constructor() {
             super("https://tenor.googleapis.com/v2/search");
         }
 
         async search(query, offset, container) {
-            const url = `${this.endpoint}?key=${this.#apiKey}&q=${encodeURIComponent(query)}&locale=fr_FR&country=FR&limit=50&pos=offset`;
+            if (offset == 0) {
+                this.#next = null;
+            }
+
+            const url = `${this.endpoint}?key=${this.#apiKey}&q=${encodeURIComponent(query)}&locale=fr_FR&country=FR&limit=50&pos=${this.#next}`;
             try {
                 const response = await fetch(url);
                 const data = await response.json();
+                this.#next = data.next;
                 this._displayGifs(data.results, container);
             } catch (error) {
                 console.error("Erreur lors de la recherche Tenor:", error);
@@ -90,7 +96,7 @@ class GifService {
             gifData.forEach(gif => {
                 const image = document.createElement('img');
                 image.src = gif.media_formats.nanogif.url;
-                image.style.margin = "5px"; // Ajout d'un petit espacement entre les images
+                image.style.margin = "5px";
 
                 image.addEventListener('click', () => {
                     this.addGifToForm(gif.media_formats.webp.url);
@@ -133,7 +139,9 @@ class GifService {
     serviceSelector.appendChild(tenorOption);
     serviceSelector.addEventListener('change', function() {
         results.innerHTML = '';
-        getService().search(input_text.value, 0, results);
+        if (input_text.value.trim() !== "") {
+            getService().search(input_text.value, 0, results);
+        }
     });
 
     let results = document.createElement("div");
