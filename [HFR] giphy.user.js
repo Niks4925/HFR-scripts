@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         [HFR] Giphy
-// @version      0.4.1
+// @version      0.4.2
 // @namespace    http://tampermonkey.net/
 // @description  Ajoute la recherche et l'insertion de gifs via Giphy et Tenor
 // @author       Garath_
