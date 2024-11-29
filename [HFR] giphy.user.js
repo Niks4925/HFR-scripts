@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         [HFR] Giphy
-// @version      0.4.1
+// @version      0.4.2
 // @namespace    http://tampermonkey.net/
 // @description  Ajoute la recherche et l'insertion de gifs via Giphy et Tenor
 // @author       Garath_
@@ -109,15 +109,7 @@ class GifService {
 
     var placeholder = null;
     let content_form = document.querySelector("#content_form");
-    if (window.location.href.startsWith("https://forum.hardware.fr/message.php")) {
-        placeholder = document.querySelector("#hop > table > tbody > tr:nth-child(5) > td");
-    }
-    else if (window.location.href.startsWith("https://forum.hardware.fr/forum2.php")) {
-        placeholder = document.querySelector("#md_fast_search");
-    }
-    else {
-        return
-    }
+    placeholder = content_form.parentElement;
     placeholder.appendChild(document.createElement("br"));
 
     const giphyService = new Giphy();
