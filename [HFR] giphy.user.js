@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         [HFR] Giphy
-// @version      0.4.2
+// @version      0.4.3
 // @namespace    http://tampermonkey.net/
 // @description  Ajoute la recherche et l'insertion de gifs via Giphy et Tenor
 // @author       Garath_
@@ -140,18 +140,8 @@ class GifService {
     let input_text = document.createElement("input");
     input_text.setAttribute("type", "text");
     input_text.style = "vertical-align: bottom";
-    input_text.addEventListener('keyup', delay(function() {
-        results.innerHTML = '';
-        if (input_text.value.length >= 3) {
-            results.style.overflowY = "scroll";
-            results.style.height = "300px";
-            getService().search(input_text.value, 0, results);
-        }
-        else {
-            results.style.overflowY = null;
-            results.style.height = null;
-        }
-    }, 500));
+    input_text.addEventListener('keyup', delay(update, 500), false);
+    input_text.addEventListener('paste', delay(update, 500), false);
 
     results.addEventListener("scroll", () => {
         const isBottom = results.scrollTop + results.clientHeight >= results.scrollHeight - 5;
@@ -180,6 +170,19 @@ class GifService {
         return function(...args) {
             clearTimeout(timer)
             timer = setTimeout(fn.bind(this, ...args), ms || 0)
+        }
+    }
+
+    function update(){
+        results.innerHTML = '';
+        if (input_text.value.length >= 3) {
+            results.style.overflowY = "scroll";
+            results.style.height = "300px";
+            getService().search(input_text.value, 0, results);
+        }
+        else {
+            results.style.overflowY = null;
+            results.style.height = null;
         }
     }
 
