@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         [HFR] Giphy
-// @version      0.5
+// @version      0.6.0
 // @namespace    http://tampermonkey.net/
 // @description  Ajoute la recherche et l'insertion de gifs via Giphy, Tenor et 7tv
 // @author       Garath_
 // @match        https://forum.hardware.fr/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=hardware.fr
-// @grant        none
+// @grant        GM_getValue
+// @grant        GM_setValue
 // ==/UserScript==
 
 
@@ -67,12 +68,12 @@
         }
     }
 
-    class Tenor extends GifService {
-        #apiKey = "AIzaSyBfOwbqJ2jquGzlFS16_My8JO-ndCditCk";
+    class Klipy extends GifService {
+        #apiKey = "KLIPY_KEY";
         #next = null;
 
         constructor() {
-            super("https://tenor.googleapis.com/v2/search");
+            super("https://api.klipy.com/v2/search");
         }
 
         async search(query, offset, container) {
@@ -87,7 +88,7 @@
                 this.#next = data.next;
                 this._displayGifs(data.results, container);
             } catch (error) {
-                console.error("Erreur lors de la recherche Tenor:", error);
+                console.error("Erreur lors de la recherche Klipy:", error);
                 return [];
             }
         }
@@ -201,7 +202,7 @@
     placeholder.appendChild(document.createElement("br"));
 
     const giphyService = new Giphy();
-    const tenorService = new Tenor();
+    const klipyService = new Klipy();
     const sevenService = new Seven();
 
     let gif = document.createElement("div");
@@ -213,9 +214,9 @@
     giphyOption.value = 'giphy';
     giphyOption.textContent = 'Giphy';
 
-    const tenorOption = document.createElement('option');
-    tenorOption.value = 'tenor';
-    tenorOption.textContent = 'Tenor';
+    const klipyOption = document.createElement('option');
+    klipyOption.value = 'klipy';
+    klipyOption.textContent = 'Klipy';
 
     const sevenOption = document.createElement('option');
     sevenOption.value = 'seven';
@@ -225,6 +226,11 @@
     serviceSelector.appendChild(tenorOption);
     serviceSelector.appendChild(sevenOption);
     serviceSelector.addEventListener('change', update, false);
+    serviceSelector.appendChild(klipyOption);
+    serviceSelector.value = GM_getValue('selectedService', 'giphy');
+    serviceSelector.addEventListener('change', function() {
+        GM_setValue('selectedService', this.value);
+    });
 
     let results = document.createElement("div");
     results.style.margin = "5px 0 0 0";
@@ -251,7 +257,7 @@
         const selectedService = serviceSelector.value;
         if (selectedService === 'giphy') {
             return giphyService
-        } else if (selectedService === 'tenor') {
+        } else if (selectedService === 'klipy') {
             return tenorService
         } else if (selectedService === 'seven') {
             return sevenService
