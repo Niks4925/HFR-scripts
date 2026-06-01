@@ -179,10 +179,15 @@
                 const image = document.createElement('img');
                 image.src = "https://cdn.7tv.app/emote/" + gif.id + "/4x.avif";
                 image.setAttribute("title", gif.defaultName);
+                image.setAttribute("loading", "lazy");
                 image.style.margin = "0 5px 5px 0";
 
                 image.addEventListener('click', () => {
-                    this.addGifToForm(image.src);
+                    this.addGifToForm(image.getAttribute("src"));
+                });
+
+                image.addEventListener('error', () => {
+                    image.src = "https://cdn.7tv.app/emote/" + gif.id + "/4x.avif?retry=" + Date.now();
                 });
 
                 container.appendChild(image);
