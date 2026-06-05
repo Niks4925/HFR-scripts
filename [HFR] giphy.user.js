@@ -2,7 +2,7 @@
 // @name         [HFR] Giphy
 // @version      0.6.0
 // @namespace    http://tampermonkey.net/
-// @description  Ajoute la recherche et l'insertion de gifs via Giphy, Tenor et 7tv
+// @description  Ajoute la recherche et l'insertion de gifs via Giphy, Klipy et 7tv
 // @author       Garath_
 // @match        https://forum.hardware.fr/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=hardware.fr
@@ -13,10 +13,9 @@
 
 (function() {
     'use strict';
+    const PROXY = "https://hfr-gifs.niks4925.workers.dev";
 
     class GifService {
-        #apiKey;
-
         constructor(endpoint) {
             if (new.target === GifService) {
                 throw new TypeError("GifService est une classe abstraite et ne peut pas être instanciée.");
@@ -35,22 +34,15 @@
     }
 
     class Giphy extends GifService {
-        #apiKey = "GIPHY_KEY";
-
         constructor() {
-            super("https://api.giphy.com/v1/gifs/search");
+            super(`${PROXY}/giphy`);
         }
 
         async search(query, offset, container) {
-            const url = `${this.endpoint}?api_key=${this.#apiKey}&q=${encodeURIComponent(query)}&limit=50&offset=${encodeURIComponent(offset)}`;
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                this._displayGifs(data.data, container);
-            } catch (error) {
-                console.error("Erreur lors de la recherche Giphy:", error);
-                return [];
-            }
+            const url = `${this.endpoint}?q=${encodeURIComponent(query)}&offset=${offset}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            this._displayGifs(data.data, container);
         }
 
         _displayGifs(gifData, container) {
@@ -69,28 +61,19 @@
     }
 
     class Klipy extends GifService {
-        #apiKey = "KLIPY_KEY";
         #next = null;
 
         constructor() {
-            super("https://api.klipy.com/v2/search");
+            super(`${PROXY}/klipy`);
         }
 
         async search(query, offset, container) {
-            if (offset == 0) {
-                this.#next = null;
-            }
-
-            const url = `${this.endpoint}?key=${this.#apiKey}&q=${encodeURIComponent(query)}&locale=fr_FR&country=FR&limit=50&pos=${this.#next}`;
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                this.#next = data.next;
-                this._displayGifs(data.results, container);
-            } catch (error) {
-                console.error("Erreur lors de la recherche Klipy:", error);
-                return [];
-            }
+            if (offset == 0) this.#next = null;
+            const url = `${this.endpoint}?q=${encodeURIComponent(query)}&pos=${this.#next ?? ''}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            this.#next = data.next;
+            this._displayGifs(data.results, container);
         }
 
         _displayGifs(gifData, container) {
@@ -109,7 +92,6 @@
     }
 
     class Seven extends GifService {
-        #apiKey = "prout";
         #ended = false;
         #next = 1;
 
@@ -223,7 +205,7 @@
     sevenOption.textContent = '7tv';
 
     serviceSelector.appendChild(giphyOption);
-    serviceSelector.appendChild(tenorOption);
+    serviceSelector.appendChild(klipyOption);
     serviceSelector.appendChild(sevenOption);
     serviceSelector.addEventListener('change', update, false);
     serviceSelector.appendChild(klipyOption);
@@ -258,7 +240,7 @@
         if (selectedService === 'giphy') {
             return giphyService
         } else if (selectedService === 'klipy') {
-            return tenorService
+            return klipyService
         } else if (selectedService === 'seven') {
             return sevenService
         }
