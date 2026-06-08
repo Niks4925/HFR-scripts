@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         [HFR] Giphy
-// @version      0.6.0
+// @version      0.6.1
 // @namespace    http://tampermonkey.net/
 // @description  Ajoute la recherche et l'insertion de gifs via Giphy, Klipy et 7tv
 // @author       Garath_
@@ -208,7 +208,6 @@
     serviceSelector.appendChild(klipyOption);
     serviceSelector.appendChild(sevenOption);
     serviceSelector.addEventListener('change', update, false);
-    serviceSelector.appendChild(klipyOption);
     serviceSelector.value = GM_getValue('selectedService', 'giphy');
     serviceSelector.addEventListener('change', function() {
         GM_setValue('selectedService', this.value);
