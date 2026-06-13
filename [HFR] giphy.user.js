@@ -77,7 +77,10 @@
             if (!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
             return await resp.json();
         } catch (err) {
-            throw err;
+            if (err instanceof Error) {
+                throw err;
+            }
+            throw new Error(String(err));
         }
     }
 
@@ -143,7 +146,7 @@
          * @param {number} offset
          * @return {string}
          */
-        buildUrl(query, offset) {
+        buildUrl(_query, _offset) {
             throw new Error("buildUrl() doit être implémentée dans les sous-classes.");
         }
 
@@ -152,7 +155,7 @@
          * @param {any} data - réponse JSON brute
          * @return {{ items: Array, nextOffset?: any }}
          */
-        parseResponse(data) {
+        parseResponse(_data) {
             throw new Error("parseResponse() doit être implémentée dans les sous-classes.");
         }
 
@@ -161,7 +164,7 @@
          * @param {any} item - item brut de l'API
          * @return {{ thumb, full, alt?, title? }}
          */
-        itemToImageData(item) {
+        itemToImageData(_item) {
             throw new Error("itemToImageData() doit être implémentée dans les sous-classes.");
         }
 
@@ -169,7 +172,7 @@
          * Hook appelé avant de commencer une recherche (reinitilize offsets, flags, etc.)
          * @param {number} offset
          */
-        onSearchStart(offset) {}
+        onSearchStart(_offset) {}
 
         /**
          * Hook appelé après fin de recherche (succès ou erreur)
@@ -220,7 +223,11 @@
 
         abortOngoing() {
             if (this._controller) {
-                try { this._controller.abort(); } catch(e) {}
+                try {
+                    this._controller.abort();
+                } catch (e) {
+                    // Intentionally ignore abort errors
+                }
                 this._controller = null;
             }
         }
@@ -328,7 +335,7 @@
             }
         }
 
-        buildUrl(query, offset) {
+        buildUrl(_query, _offset) {
             return this.endpoint + `?_ts=${Date.now()}`;
         }
 
@@ -581,13 +588,17 @@
         }
     }
 
-    function update() {
-        results.innerHTML = '';
-        // réapposer le sentinel en bas
-        results.appendChild(sentinel);
-        // ré-observer le sentinel (certaines implémentations peuvent cesser d'observer après retrait)
-        try { observer.observe(sentinel); } catch (e) {}
-        loading = false;
+     function update() {
+         results.innerHTML = '';
+         // réapposer le sentinel en bas
+         results.appendChild(sentinel);
+         // ré-observer le sentinel (certaines implémentations peuvent cesser d'observer après retrait)
+         try {
+             observer.observe(sentinel);
+         } catch (e) {
+             // Intentionally ignore if already observing
+         }
+         loading = false;
         if (input_text.value.trim().length >= 3) {
             results.style.overflowY = "auto";
             results.style.maxHeight = "300px";

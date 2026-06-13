@@ -9,10 +9,16 @@
     "ecmaVersion": 2022,
     "sourceType": "module"
   },
+  "globals": {
+    "GM_getValue": "readonly",
+    "GM_setValue": "readonly"
+  },
   "rules": {
     "no-unused-vars": "warn",
-    "no-console": "off"
+    "no-console": "off",
+    "no-empty": ["warn", { "allowEmptyCatch": true }]
   }
 }
+
 
 
