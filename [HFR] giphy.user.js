@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         [HFR] Giphy
-// @version      0.6.1
+// @version      0.6.2
 // @namespace    http://tampermonkey.net/
 // @description  Ajoute la recherche et l'insertion de gifs via Giphy, Klipy et 7tv
 // @author       Garath_
@@ -10,10 +10,35 @@
 // @grant        GM_setValue
 // ==/UserScript==
 
-
 (function() {
     'use strict';
     const PROXY = "https://hfr-gifs.niks4925.workers.dev";
+
+    const style = document.createElement('style');
+    style.textContent = `
+        #gif-results {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            padding: 4px 0;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+        #gif-results img {
+            height: 100px;
+            width: auto;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        #gif-results img:hover {
+            transform: scale(1.1);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.5);
+            position: relative;
+            z-index: 10;
+        }
+    `;
+    document.head.appendChild(style);
 
     class GifService {
         constructor(endpoint) {
@@ -27,7 +52,6 @@
             throw new Error("La méthode 'search' doit être implémentée dans les classes dérivées.");
         }
 
-        // Ajout du GIF cliqué à la page
         addGifToForm(url) {
             content_form.value += "[img]" + url + "[/img]";
         }
@@ -49,12 +73,9 @@
             gifData.forEach(gif => {
                 const image = document.createElement('img');
                 image.src = gif.images.fixed_width_small.url;
-                image.style.margin = "0 5px 5px 0";
-
                 image.addEventListener('click', () => {
                     this.addGifToForm(gif.images.downsized.url);
                 });
-
                 container.appendChild(image);
             });
         }
@@ -80,12 +101,9 @@
             gifData.forEach(gif => {
                 const image = document.createElement('img');
                 image.src = gif.media_formats.nanogif.url;
-                image.style.margin = "0 5px 5px 0";
-
                 image.addEventListener('click', () => {
                     this.addGifToForm(gif.media_formats.webp.url);
                 });
-
                 container.appendChild(image);
             });
         }
@@ -105,16 +123,12 @@
                 this.#next = 1;
             }
 
-            if (this.#ended) {
-                return;
-            }
+            if (this.#ended) return;
 
             try {
                 const response = await fetch(this.endpoint, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         query: `query seven($soso: Sort!, $fifi: Filters) {
                           emotes {
@@ -136,13 +150,8 @@
                           }
                         }`,
                         variables: {
-                            soso: {
-                                sortBy: "TOP_ALL_TIME",
-                                order: "DESCENDING"
-                            },
-                            fifi: {
-                                exactMatch: false
-                            }
+                            soso: { sortBy: "TOP_ALL_TIME", order: "DESCENDING" },
+                            fifi: { exactMatch: false }
                         }
                     })
                 });
@@ -153,7 +162,6 @@
                 this._displayGifs(data.data.emotes.search.items, container);
             } catch (error) {
                 console.error("Erreur lors de la recherche Seven:", error);
-                return [];
             }
         }
 
@@ -163,98 +171,88 @@
                 image.src = "https://cdn.7tv.app/emote/" + gif.id + "/4x.avif";
                 image.setAttribute("title", gif.defaultName);
                 image.setAttribute("loading", "lazy");
-                image.style.margin = "0 5px 5px 0";
-
                 image.addEventListener('click', () => {
                     this.addGifToForm(image.getAttribute("src"));
                 });
-
                 image.addEventListener('error', () => {
                     image.src = "https://cdn.7tv.app/emote/" + gif.id + "/4x.avif?retry=" + Date.now();
                 });
-
                 container.appendChild(image);
             });
         }
     }
 
-    var placeholder = null;
     let content_form = document.querySelector("#content_form");
-    placeholder = content_form.parentElement;
+    const placeholder = content_form.parentElement;
     placeholder.appendChild(document.createElement("br"));
 
     const giphyService = new Giphy();
     const klipyService = new Klipy();
     const sevenService = new Seven();
 
-    let gif = document.createElement("div");
+    const gif = document.createElement("div");
     gif.setAttribute("id", "gif");
 
     const serviceSelector = document.createElement('select');
     serviceSelector.style.margin = "0 5px 0 0";
-    const giphyOption = document.createElement('option');
-    giphyOption.value = 'giphy';
-    giphyOption.textContent = 'Giphy';
 
-    const klipyOption = document.createElement('option');
-    klipyOption.value = 'klipy';
-    klipyOption.textContent = 'Klipy';
-
-    const sevenOption = document.createElement('option');
-    sevenOption.value = 'seven';
-    sevenOption.textContent = '7tv';
-
-    serviceSelector.appendChild(giphyOption);
-    serviceSelector.appendChild(klipyOption);
-    serviceSelector.appendChild(sevenOption);
-    serviceSelector.addEventListener('change', update, false);
-    serviceSelector.value = GM_getValue('selectedService', 'giphy');
-    serviceSelector.addEventListener('change', function() {
-        GM_setValue('selectedService', this.value);
+    [['giphy', 'Giphy'], ['klipy', 'Klipy'], ['seven', '7tv']].forEach(([value, label]) => {
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = label;
+        serviceSelector.appendChild(opt);
     });
 
-    let results = document.createElement("div");
-    results.style.margin = "5px 0 0 0";
-    let input_text = document.createElement("input");
+    serviceSelector.value = GM_getValue('selectedService', 'giphy');
+    serviceSelector.addEventListener('change', () => {
+        GM_setValue('selectedService', serviceSelector.value);
+        update();
+    });
+
+    const input_text = document.createElement("input");
     input_text.setAttribute("type", "text");
     input_text.style.verticalAlign = "bottom";
-    input_text.addEventListener('keyup', delay(update, 500), false);
-    input_text.addEventListener('paste', delay(update, 500), false);
+    input_text.addEventListener('input', delay(update, 700), false); // corrige les doubles requêtes
+
+    const results = document.createElement("div");
+    results.setAttribute("id", "gif-results");
+    results.style.margin = "5px 0 0 0";
+
+    let loading = false;
 
     results.addEventListener("scroll", () => {
         const isBottom = results.scrollTop + results.clientHeight >= results.scrollHeight - 5;
-        if (isBottom) {
-            const offset = results.children.length;
-            getService().search(input_text.value.trim(), offset, results);
+        if (isBottom && !loading) {
+            loading = true;
+            getService()
+                .search(input_text.value.trim(), results.children.length, results)
+                .finally(() => { loading = false; });
         }
     });
+
     gif.appendChild(serviceSelector);
     gif.appendChild(input_text);
     gif.appendChild(results);
-
     placeholder.appendChild(gif);
 
     function getService() {
-        const selectedService = serviceSelector.value;
-        if (selectedService === 'giphy') {
-            return giphyService
-        } else if (selectedService === 'klipy') {
-            return klipyService
-        } else if (selectedService === 'seven') {
-            return sevenService
-        }
+        const v = serviceSelector.value;
+        if (v === 'giphy') return giphyService;
+        if (v === 'klipy') return klipyService;
+        if (v === 'seven') return sevenService;
     }
 
     function delay(fn, ms) {
-        let timer = 0
+        let timer = 0;
         return function(...args) {
-            clearTimeout(timer)
-            timer = setTimeout(fn.bind(this, ...args), ms || 0)
+            clearTimeout(timer);
+            timer = setTimeout(fn.bind(this, ...args), ms || 0);
         }
     }
 
     function update() {
         results.innerHTML = '';
+        loading = false;
         if (input_text.value.trim().length >= 3) {
             results.style.overflowY = "auto";
             results.style.maxHeight = "300px";
