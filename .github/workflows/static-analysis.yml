@@ -1,0 +1,86 @@
+name: Static analysis (ESLint)
+
+on:
+  pull_request:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  eslint:
+    name: ESLint on changed JS files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Determine changed JS files
+        id: changed_files
+        run: |
+          set -euo pipefail
+          echo "Event: $GITHUB_EVENT_NAME"
+
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            # For pull requests compare with the base branch/sha
+            BASE_REF="${{ github.event.pull_request.base.ref }}"
+            echo "Fetching base ref: $BASE_REF"
+            git fetch origin "$BASE_REF" --depth=1
+            FILES=$(git diff --name-only FETCH_HEAD...HEAD | grep -E '\.js$' || true)
+          else
+            # For push events compare the before/after commit range
+            FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '\.js$' || true)
+          fi
+
+          # Write the result to GITHUB_OUTPUT (recommended over set-output)
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Install ESLint
+        run: npm install eslint@8 --no-audit --no-fund --silent
+
+      - name: Run ESLint on changed files
+        run: |
+          FILES="${{ steps.changed_files.outputs.files }}"
+          if [ -z "$FILES" ]; then
+            echo "No JS files changed. Skipping ESLint."
+            exit 0
+          fi
+          echo "Files to lint:"
+          echo "$FILES"
+          # Read files into array and pass to ESLint with JSON format
+          readarray -t FILES_ARRAY <<< "$FILES"
+          npx eslint "${FILES_ARRAY[@]}" -f json > eslint-report.json || true
+          
+          # Parse JSON and emit GitHub annotations
+          node -e "
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('eslint-report.json', 'utf8'));
+          let errorCount = 0;
+          let warningCount = 0;
+          
+          report.forEach(file => {
+            file.messages.forEach(msg => {
+              const level = msg.severity === 2 ? 'error' : 'warning';
+              const annotation = \`::\${level} file=\${file.filePath},line=\${msg.line},col=\${msg.column}::\${msg.message} (\${msg.ruleId})\`;
+              console.log(annotation);
+              if (msg.severity === 2) errorCount++;
+              else warningCount++;
+            });
+          });
+          
+          console.log(\`\n:: ESLint Summary: \${errorCount} errors, \${warningCount} warnings\`);
+          process.exit(errorCount > 0 ? 1 : 0);
+          "
+        env:
+          CI: true
+
+
