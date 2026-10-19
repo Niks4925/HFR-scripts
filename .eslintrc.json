@@ -10,8 +10,10 @@
     "sourceType": "module"
   },
   "globals": {
+    "GM": "readonly",
     "GM_getValue": "readonly",
-    "GM_setValue": "readonly"
+    "GM_setValue": "readonly",
+    "mpStorage": "readonly"
   },
   "rules": {
     "no-unused-vars": "warn",
@@ -19,6 +21,3 @@
     "no-empty": ["warn", { "allowEmptyCatch": true }]
   }
 }
-
-
-
