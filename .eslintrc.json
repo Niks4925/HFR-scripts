@@ -21,5 +21,3 @@
     "no-empty": ["warn", { "allowEmptyCatch": true }]
   }
 }
-
-
